@@ -64,7 +64,7 @@ class WhenChanged(FileSystemEventHandler):
             if os.path.exists(f) and os.path.getmtime(f) < self.last_run:
                 return
 
-        if self._proc is not None:
+        if self._proc is not None and self._proc.poll() is None:
             self._proc.terminate()
 
         new_command = [item.replace('%f', f) for item in self.command]
