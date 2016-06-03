@@ -46,6 +46,7 @@ class WhenChanged(FileSystemEventHandler):
         self.run_once = run_once
         self.run_at_start = run_at_start
         self.last_run = 0
+        self._proc = None
 
         self.observer = Observer(timeout=0.1)
 
@@ -58,15 +59,17 @@ class WhenChanged(FileSystemEventHandler):
                 p = os.path.dirname(p)
                 self.observer.schedule(self, p)
 
-
-    def run_command(self, thefile):
+    def run_command(self, f):
         if self.run_once:
-            if os.path.exists(thefile) and os.path.getmtime(thefile) < self.last_run:
+            if os.path.exists(f) and os.path.getmtime(f) < self.last_run:
                 return
-        new_command = []
-        for item in self.command:
-            new_command.append(item.replace('%f', thefile))
-        subprocess.call(new_command, shell=(len(new_command) == 1))
+
+        if self._proc is not None:
+            self._proc.terminate()
+
+        new_command = [item.replace('%f', f) for item in self.command]
+        shell = len(new_command) == 1
+        self._proc = subprocess.Popen(new_command, shell=shell)
         self.last_run = time.time()
 
     def is_interested(self, path):
